@@ -49,6 +49,7 @@ protected:
 	M_INT_STR		m_vnListNewAddNum;
 
 private:
+    bool m_refreshingOverlay=false;
 	//CMapXMsgProcBase_List* m_pMsgBaseList;
 
 	void FillClassView();
@@ -74,6 +75,7 @@ protected:
 	afx_msg void OnUpdateSort(CCmdUI* pCmdUI);
 
 	afx_msg void OnLvnItemchangedCopLayer(NMHDR* pNMHDR, LRESULT* pResult);
+	afx_msg void OnOverlayLabelEdited(NMHDR* pNMHDR, LRESULT* pResult);
 	afx_msg void OnNMDblclkListDebugDlg(NMHDR* pNMHDR, LRESULT* pResult);
 
 	DECLARE_MESSAGE_MAP()

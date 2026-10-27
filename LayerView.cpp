@@ -103,6 +103,7 @@ BEGIN_MESSAGE_MAP(CLayerView, CDockablePane)
 	ON_UPDATE_COMMAND_UI_RANGE(ID_SORTING_GROUPBYTYPE_COP, ID_SORTING_SORTBYACCESS_COP, OnUpdateSort)
 
 	ON_NOTIFY(LVN_ITEMCHANGED, IDC_COP_LISTCTRL_LAYER, &CLayerView::OnLvnItemchangedCopLayer)
+	ON_NOTIFY(LVN_ENDLABELEDIT, IDC_COP_LISTCTRL_LAYER, &CLayerView::OnOverlayLabelEdited)
 	ON_NOTIFY(NM_DBLCLK, IDC_COP_LISTCTRL_LAYER, &CLayerView::OnNMDblclkListDebugDlg)
 END_MESSAGE_MAP()
 
@@ -118,7 +119,7 @@ int CLayerView::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	rectDummy.SetRectEmpty();
 
 	// 뷰를 만듭니다.
-	const DWORD dwViewStyle = WS_CHILD | WS_VISIBLE | TVS_HASLINES | TVS_LINESATROOT | TVS_HASBUTTONS | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | TVS_CHECKBOXES;
+	const DWORD dwViewStyle = WS_CHILD | WS_VISIBLE | LVS_REPORT | LVS_SINGLESEL | LVS_SHOWSELALWAYS | LVS_EDITLABELS | WS_CLIPSIBLINGS | WS_CLIPCHILDREN;
 
 	if (!m_wndCOPView.Create(dwViewStyle, rectDummy, this, IDC_COP_LISTCTRL_LAYER))
 	{
@@ -130,8 +131,8 @@ int CLayerView::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	m_wndCOPView.SetExtendedStyle(dwExStyle | LVS_EX_CHECKBOXES | LVS_EX_BORDERSELECT | LVS_EX_HEADERDRAGDROP | LVS_EX_GRIDLINES | LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER /*| LVS_OWNERDATA*/);
 
 	m_wndCOPView.InsertColumn(COPLAYER_NAME, _T("레이어 명칭"), LVCFMT_LEFT, 160);
-	m_wndCOPView.InsertColumn(COPLAYER_ITEMSIZE, _T("도시요소 개수"), LVCFMT_CENTER, 50);
-	m_wndCOPView.InsertColumn(COPLAYER_TYPE, _T("레이어 형식"), LVCFMT_LEFT, 50);
+	m_wndCOPView.InsertColumn(COPLAYER_ITEMSIZE, _T("도형 개수"), LVCFMT_CENTER, 80);
+	m_wndCOPView.InsertColumn(COPLAYER_TYPE, _T("레이어 형식"), LVCFMT_LEFT, 100);
 	//m_wndCOPView.EnableGroupView(TRUE);
 	m_wndCOPView.ModifyStyle(LVS_TYPEMASK, LVS_REPORT);
 
@@ -362,138 +363,33 @@ CListCtrl* CLayerView::GetView()
 //	m_pMsgBaseList = pMsgBaseList;
 //}
 
-void CLayerView::RefreshMsgList()
-{
-	//if (!m_pMsgBaseList)
-	//	return;
-
-	m_wndCOPView.DeleteAllItems();
-
-
-	CString tmp;
-
-/*
-	size_t nLayerSize = m_pMsgBaseList->GetCount();
-	size_t nItems = 0;
-
-	M_STR_VECSTR mlist;
-	for (UINT32 nidx = 0; nidx < nLayerSize; nidx++)
-	{
-		CString strNm = m_pMsgBaseList->getMsgName(nidx);
-		size_t nRecSize = m_pMsgBaseList->getMsgRecordSizeReverse(nidx, 0);
-
-		M_STR_VECSTR_iter iter = mlist.find(strNm);
-		if (iter != mlist.end())
-		{
-			int nCount = atoi((*iter).second[1]);
-			nRecSize += nCount;
-			tmp.Format("%d", nRecSize);
-			(*iter).second[1] = tmp;
-		}
-		else
-		{
-			int nMsgType = m_pMsgBaseList->getMsgType(nidx);
-			int nCoordType = m_pMsgBaseList->getMsgCoordType(nidx);
-			int nMsg = m_pMsgBaseList->getMsgSize(nidx);
-			int nColSize = m_pMsgBaseList->getMsgColumnSizeReverse(nidx, 0);
-
-			VEC_STR vstrlist;
-			vstrlist.push_back(strNm);
-			tmp.Format("%d", nRecSize);
-			vstrlist.push_back(tmp);
-			tmp.Format("%d", nColSize);
-			vstrlist.push_back(tmp);
-			tmp.Format("%d", nMsgType);
-			vstrlist.push_back(tmp);
-			tmp.Format("%d", nCoordType);
-			vstrlist.push_back(tmp);
-			tmp.Format("%d", nMsg);
-			vstrlist.push_back(tmp);
-
-			mlist.insert(M_STR_VECSTR_pair(strNm, vstrlist));
-		}
-	}
-
-	for (M_STR_VECSTR_iter iter = mlist.begin(); iter != mlist.end(); iter++)
-	{
-		int nListNum;
-		if ((nListNum = _listCtrl_AddItems((CListCtrl*)&m_wndCOPView, (*iter).second)) != -1)
-		{
-			int nMsgType = atoi((*iter).second[3]);
-			m_wndCOPView.SetCheck(nListNum, TRUE);
-			m_wndCOPView.SetItemData(nListNum, (DWORD_PTR)nMsgType);
-		}
-	}
-*/
+void CLayerView::RefreshMsgList(){
+    if(!m_wndCOPView.GetSafeHwnd()||m_refreshingOverlay)return;
+    auto frame=DYNAMIC_DOWNCAST(CMainFrame,AfxGetMainWnd());
+    auto view=frame?DYNAMIC_DOWNCAST(CC4IMapView,frame->GetActiveView()):nullptr;if(!view)return;
+    m_refreshingOverlay=true;m_wndCOPView.SetRedraw(FALSE);m_wndCOPView.DeleteAllItems();
+    for(const auto& layer:view->OverlayLayers().Layers()){
+        int row=m_wndCOPView.InsertItem(m_wndCOPView.GetItemCount(),layer.name);CString count;count.Format(_T("%llu"),(unsigned long long)layer.count);
+        m_wndCOPView.SetItemText(row,COPLAYER_ITEMSIZE,count);m_wndCOPView.SetItemText(row,COPLAYER_TYPE,_T("투명도 (Overlay)"));
+        m_wndCOPView.SetItemData(row,(DWORD_PTR)layer.id);m_wndCOPView.SetCheck(row,layer.visible);
+        if(layer.id==view->OverlayLayers().ActiveLayer())m_wndCOPView.SetItemState(row,LVIS_SELECTED|LVIS_FOCUSED,LVIS_SELECTED|LVIS_FOCUSED);
+    }
+    m_wndCOPView.SetRedraw(TRUE);m_wndCOPView.Invalidate();m_refreshingOverlay=false;
 }
-
-void CLayerView::OnLvnItemchangedCopLayer(NMHDR* pNMHDR, LRESULT* pResult)
-{
-	LPNMLISTVIEW pNMLV = reinterpret_cast<LPNMLISTVIEW>(pNMHDR);
-	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
-	UINT nOldCheck = pNMLV->uOldState & LVIS_STATEIMAGEMASK;
-	UINT nNewCheck = pNMLV->uNewState & LVIS_STATEIMAGEMASK;
-
-	if (nOldCheck && nNewCheck && nOldCheck != nNewCheck)
-	{
-		BOOL bNew = FALSE;
-		M_INT_STR_iter iter = m_vnListNewAddNum.find(pNMLV->iItem);
-		if (iter != m_vnListNewAddNum.end())
-		{
-			bNew = TRUE;
-			m_vnListNewAddNum.erase(iter);
-		}
-
-		CListCtrl* pWndList = (CListCtrl*)&m_wndCOPView;
-/*
-		BOOL bShow = pWndList->GetCheck(pNMLV->iItem);
-		CString strItem = pWndList->GetItemText(pNMLV->iItem, COPLAYER_TYPE);	// 상황도 레이어 형식 확인
-		eIER_TYPE eType = (eIER_TYPE)atoi(strItem);
-
-		if (m_pMsgBaseList)
-		{
-			CMapXMsgProcBase* pMsg = m_pMsgBaseList->GetAt(eType);
-			if (pMsg)
-			{
-				BOOL bMsgShow = pMsg->isShow();
-
-				if (bMsgShow != bShow)
-				{
-					pMsg->show(bShow);
-				}
-			}
-		}
-
-		if (!bNew)	// 신규항목은 해당 없음  
-		{
-			if (m_pMsgBaseList)
-			{
-				CMainFrame* pFrame = (CMainFrame*)AfxGetMainWnd();
-				if (pFrame)
-				{
-					CC4IMapView* pView = (CC4IMapView*)pFrame->GetActiveView();
-					if (pView)
-					{
-						pView->SendMessage(IMX_REP_WM_ROW_INVALIDATE, (WPARAM)eType, NULL);
-					}
-				}
-			}
-		}
-*/
-	}
-	*pResult = 0;
+void CLayerView::OnLvnItemchangedCopLayer(NMHDR* header,LRESULT* result){
+    *result=0;if(m_refreshingOverlay)return;auto changed=(NMLISTVIEW*)header;if(changed->iItem<0)return;
+    auto frame=DYNAMIC_DOWNCAST(CMainFrame,AfxGetMainWnd());auto view=frame?DYNAMIC_DOWNCAST(CC4IMapView,frame->GetActiveView()):nullptr;if(!view)return;
+    int id=(int)m_wndCOPView.GetItemData(changed->iItem);
+    if((changed->uNewState&LVIS_SELECTED)&&!(changed->uOldState&LVIS_SELECTED))view->OverlayLayers().SelectLayer(id);
+    UINT before=changed->uOldState&LVIS_STATEIMAGEMASK,after=changed->uNewState&LVIS_STATEIMAGEMASK;
+    if(before&&after&&before!=after)view->OverlayLayers().SetLayerVisible(id,m_wndCOPView.GetCheck(changed->iItem)!=FALSE);
+    view->Invalidate(FALSE);
 }
-
-void CLayerView::OnNMDblclkListDebugDlg(NMHDR* pNMHDR, LRESULT* pResult)
-{
-	LPNMITEMACTIVATE pNMItemActivate = reinterpret_cast<LPNMITEMACTIVATE>(pNMHDR);
-	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
-
-	//if (m_pMsgBaseList)
-	//	m_pMsgBaseList->windowProc(IER_LAYER_LIST_LDCLICK, (LPARAM)pNMHDR, (WPARAM)pResult);
-	msgBaseListPatrol(FALSE);
-
-	*pResult = 0;
+void CLayerView::OnNMDblclkListDebugDlg(NMHDR* header,LRESULT* result){auto item=(NMITEMACTIVATE*)header;if(item->iItem>=0)m_wndCOPView.EditLabel(item->iItem);*result=0;}
+void CLayerView::OnOverlayLabelEdited(NMHDR* header,LRESULT* result){
+    *result=FALSE;auto edit=(NMLVDISPINFO*)header;if(!edit->item.pszText||edit->item.iItem<0)return;
+    auto frame=DYNAMIC_DOWNCAST(CMainFrame,AfxGetMainWnd());auto view=frame?DYNAMIC_DOWNCAST(CC4IMapView,frame->GetActiveView()):nullptr;
+    if(view)*result=view->OverlayLayers().RenameLayer((int)m_wndCOPView.GetItemData(edit->item.iItem),edit->item.pszText)?TRUE:FALSE;
 }
 
 void CLayerView::msgBaseListPatrol(BOOL bPatrol)

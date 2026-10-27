@@ -13,6 +13,7 @@
 //
 
 #include "pch.h"
+#include "MapSources.h"
 #include "framework.h"
 #include "C4IMap.h"
 
@@ -167,6 +168,7 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 	m_wndStatusBar.AddElement(new CMFCRibbonStatusBarPane(ID_STATUSBAR_PANE1, _T(" Lon:000° 00' 00.000, Lat: 00° 00' 00.000 (X:000.000000, Y:00.000000) \
 							| MGRS : 00ABC 00000 00000 | UTM : 00A 00000 00000 | GEOREF : ABCD0000000000 | GARS : 000AB00 | Alt: 000m"), TRUE), strTitlePane1);
+	m_wndStatusBar.AddExtendedElement(new CMFCRibbonStatusBarPane(59220, _T("Scale 1:000,000,000"), TRUE), _T("Scale"));
 	m_wndStatusBar.AddExtendedElement(new CMFCRibbonStatusBarPane(ID_STATUSBAR_PANE2, strTitlePane2, TRUE), strTitlePane2);
 	
 	// Visual Studio 2005 스타일 도킹 창 동작을 활성화합니다.
@@ -229,7 +231,21 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	if (m_wndIndexMapView.GetSafeHwnd() != NULL)
 	{
 		//m_indexMap = new CShapeT();
-		m_indexMap.OpenShapeFile();
+
+#if C4MAP_ENABLE_LOCAL
+        m_indexMap.OpenShapeFile();
+        CString localMessage;
+        CString style=_T("D:\\map\\styles\\cop_land_100_unix.xml");
+        if(GetFileAttributes(style)==INVALID_FILE_ATTRIBUTES)style.Empty();
+        m_indexMap.LoadLocalCatalog(_T("D:/map/shp"),localMessage);
+        OutputDebugString(localMessage+_T("\n"));
+#endif
+        TCHAR path[MAX_PATH]={0};
+		GetModuleFileName(nullptr,path,MAX_PATH);
+		CString catalog(path);
+		catalog=catalog.Left(catalog.ReverseFind('\\')+1)+_T("map-sources.xml");
+		CString sourceError;MapSources().Load(catalog,sourceError);
+        m_wndMapObjectManager.RefreshLocalShapeTree();
 	}
 
 	// 보관된 값에 따라 비주얼 관리자 및 스타일을 설정합니다.
@@ -569,6 +585,7 @@ void CMainFrame::InitializeRibbon()
 	// "투명도 레이어"
 	pPanel = pCategory->AddPanel(_T("레이어"));
 	pPanel->Add(new CMFCRibbonButton(ID_MENU_OVERLAY_NEW, DEF_RBAR_DRAW_PANEL1_CMD1, 0, 0));	// "생성"
+	pPanel->Add(new CMFCRibbonButton(ID_MENU_OVERLAY_SAVE, _T("저장"), 2, 2));
 	pPanel->Add(new CMFCRibbonButton(ID_MENU_OVERLAY_OPEN, DEF_RBAR_DRAW_PANEL1_CMD2, 1, 1));	// "열기"
 	//pPanelShapeLayer->Add(new CMFCRibbonButton(ID_MENU_OVERLAY_SAVE, DEF_RBAR_DRAW_PANEL1_CMD3, 2, 2));	// "저장"	// View에서 선택 저장
 	//pPanelShapeLayer->Add(new CMFCRibbonButton(ID_MENU_OVERLAY_DELETE, DEF_RBAR_DRAW_PANEL1_CMD4, 3, 3));	// "삭제"	// View에서 선택 삭제
@@ -583,6 +600,8 @@ void CMainFrame::InitializeRibbon()
 	// "그리기"
 	pPanel = pCategory->AddPanel(_T("그리기"));
 
+    pPanel->Add(new CMFCRibbonButton(ID_C4OVER_UNDO,_T("Undo")));
+    pPanel->Add(new CMFCRibbonButton(ID_C4OVER_REDO,_T("Redo")));
 	m_pRibbonDrawGallery = new CMFCRibbonGallery(ID_RIBBON_OVERLAY_DRAW_GALLERY, _T("도형"), -1, 0);
 
 	CMFCToolBarImages mtbi_Recently;
@@ -626,7 +645,13 @@ void CMainFrame::InitializeRibbon()
 
 	delete[] lpBitdata;
 
-	pPanel->Add(m_pRibbonDrawGallery);
+	auto drawMenu=new CMFCRibbonButton(0,_T("도형그리기"));
+    drawMenu->AddSubItem(new CMFCRibbonButton(ID_C4OVER_LINE,_T("선")));
+    drawMenu->AddSubItem(new CMFCRibbonButton(ID_C4OVER_ARROW,_T("화살표")));
+    drawMenu->AddSubItem(new CMFCRibbonButton(ID_C4OVER_RECT,_T("사각형")));
+    drawMenu->AddSubItem(new CMFCRibbonButton(ID_C4OVER_ELLIPSE,_T("타원")));
+    m_pRibbonDrawGallery->AddSubItem(drawMenu);
+    pPanel->Add(m_pRibbonDrawGallery);
 
 	//m_pRibbonSortGallery = new CMFCRibbonGallery(ID_RIBBON_OVERLAY_SORT_GALLERY, _T("정렬"), 3, 3, IDB_OVERLAY_DRAW_QUICKSTYLE, 64);
 	//m_pRibbonSortGallery->AddGroup(_T("개체순서"), -1);
