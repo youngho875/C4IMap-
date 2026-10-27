@@ -7,12 +7,6 @@
     <Filter Include="DockBar">
       <UniqueIdentifier>{9f0e974b-8a27-44ee-8834-350a603f2c25}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header">
-      <UniqueIdentifier>{6aa2d144-96d9-4bc7-a5ce-7c5d34fa8ab7}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Shape">
-      <UniqueIdentifier>{1868bb89-504c-4f5d-b17d-343ab8baa5f8}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source">
       <UniqueIdentifier>{740bcd10-efc1-4b31-b7ea-43154281a92a}</UniqueIdentifier>
     </Filter>
@@ -22,36 +16,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Dbf.h">
-      <Filter>Shape</Filter>
-    </ClInclude>
-    <ClInclude Include="Shp.h">
-      <Filter>Shape</Filter>
-    </ClInclude>
-    <ClInclude Include="shpCommon.h">
-      <Filter>Shape</Filter>
-    </ClInclude>
-    <ClInclude Include="shpDBF.h">
-      <Filter>Shape</Filter>
-    </ClInclude>
-    <ClInclude Include="ShpMgr.h">
-      <Filter>Shape</Filter>
-    </ClInclude>
-    <ClInclude Include="shpMultiPoint.h">
-      <Filter>Shape</Filter>
-    </ClInclude>
-    <ClInclude Include="shpObject.h">
-      <Filter>Shape</Filter>
-    </ClInclude>
-    <ClInclude Include="shpPoint.h">
-      <Filter>Shape</Filter>
-    </ClInclude>
-    <ClInclude Include="shpPoly.h">
-      <Filter>Shape</Filter>
-    </ClInclude>
-    <ClInclude Include="shpPolygon.h">
-      <Filter>Shape</Filter>
-    </ClInclude>
     <ClInclude Include="IndexMapWnd.h">
       <Filter>DockBar</Filter>
     </ClInclude>
@@ -124,95 +88,50 @@
     <ClInclude Include="targetver.h">
       <Filter>APP</Filter>
     </ClInclude>
-    <ClInclude Include="CaptureWindow.h">
-      <Filter>Header</Filter>
-    </ClInclude>
-    <ClInclude Include="DIBSectionLite.h">
-      <Filter>Header</Filter>
-    </ClInclude>
-    <ClInclude Include="DisplayElement.h">
-      <Filter>Header</Filter>
-    </ClInclude>
-    <ClInclude Include="FileFinder.h">
-      <Filter>Header</Filter>
-    </ClInclude>
-    <ClInclude Include="FilePath.h">
-      <Filter>Header</Filter>
-    </ClInclude>
-    <ClInclude Include="Flags.h">
-      <Filter>Header</Filter>
-    </ClInclude>
-    <ClInclude Include="GColorData.h">
-      <Filter>Header</Filter>
-    </ClInclude>
-    <ClInclude Include="GEnvVar.h">
-      <Filter>Header</Filter>
-    </ClInclude>
-    <ClInclude Include="GFileUtil.h">
-      <Filter>Header</Filter>
-    </ClInclude>
-    <ClInclude Include="GLib.h">
-      <Filter>Header</Filter>
-    </ClInclude>
-    <ClInclude Include="GlobalInfo.h">
-      <Filter>Header</Filter>
-    </ClInclude>
-    <ClInclude Include="GMapInfo.h">
-      <Filter>Header</Filter>
-    </ClInclude>
-    <ClInclude Include="GMapLib.h">
-      <Filter>Header</Filter>
-    </ClInclude>
-    <ClInclude Include="GStatusFlag.h">
-      <Filter>Header</Filter>
-    </ClInclude>
-    <ClInclude Include="GViewInfo.h">
-      <Filter>Header</Filter>
-    </ClInclude>
-    <ClInclude Include="Ini.h">
-      <Filter>Header</Filter>
-    </ClInclude>
-    <ClInclude Include="Initiator.h">
-      <Filter>Header</Filter>
-    </ClInclude>
-    <ClInclude Include="io.hpp">
-      <Filter>Header</Filter>
-    </ClInclude>
-    <ClInclude Include="MapConfigMgr.h">
-      <Filter>Header</Filter>
-    </ClInclude>
-    <ClInclude Include="MapDataMgr.h">
-      <Filter>Header</Filter>
-    </ClInclude>
-    <ClInclude Include="MapGeneratorDlg.h">
-      <Filter>Header</Filter>
-    </ClInclude>
-    <ClInclude Include="MessageDefine.h">
-      <Filter>Header</Filter>
-    </ClInclude>
-    <ClInclude Include="PathFile.h">
-      <Filter>Header</Filter>
-    </ClInclude>
-    <ClInclude Include="PointDisplay.h">
-      <Filter>Header</Filter>
-    </ClInclude>
-    <ClInclude Include="pointStruct.h">
-      <Filter>Header</Filter>
-    </ClInclude>
-    <ClInclude Include="SafeQueue.h">
-      <Filter>Header</Filter>
-    </ClInclude>
-    <ClInclude Include="TmsMgr.h">
-      <Filter>Header</Filter>
-    </ClInclude>
-    <ClInclude Include="GlobalVar.h">
-      <Filter>APP</Filter>
-    </ClInclude>
-    <ClInclude Include="ShapeT.h">
-      <Filter>Header</Filter>
-    </ClInclude>
     <ClInclude Include="IndexMapView.h">
       <Filter>DockBar</Filter>
+    </ClInclude>
+    <ClInclude Include="GPoint.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="MessageDefine.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="pointStruct.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="ShapeT.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="TmsMgr.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="BaseMapOptions.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="LocalOverlay.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="MapBuildOptions.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="MapDecoration.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="MapSources.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="TerrainElevation.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="TerrainLayer.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="TerrainTileLayer.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="TerrainTiles.h">
+      <Filter>Source</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -230,33 +149,6 @@
     </ClCompile>
     <ClCompile Include="pch.cpp">
       <Filter>APP</Filter>
-    </ClCompile>
-    <ClCompile Include="Shp.cpp">
-      <Filter>Shape</Filter>
-    </ClCompile>
-    <ClCompile Include="shpDBF.cpp">
-      <Filter>Shape</Filter>
-    </ClCompile>
-    <ClCompile Include="ShpMgr.cpp">
-      <Filter>Shape</Filter>
-    </ClCompile>
-    <ClCompile Include="shpMultiPoint.cpp">
-      <Filter>Shape</Filter>
-    </ClCompile>
-    <ClCompile Include="shpObject.cpp">
-      <Filter>Shape</Filter>
-    </ClCompile>
-    <ClCompile Include="shpPoint.cpp">
-      <Filter>Shape</Filter>
-    </ClCompile>
-    <ClCompile Include="shpPoly.cpp">
-      <Filter>Shape</Filter>
-    </ClCompile>
-    <ClCompile Include="shpPolygon.cpp">
-      <Filter>Shape</Filter>
-    </ClCompile>
-    <ClCompile Include="Dbf.cpp">
-      <Filter>Shape</Filter>
     </ClCompile>
     <ClCompile Include="C4IMapView_Draw.cpp">
       <Filter>APP</Filter>
@@ -321,79 +213,19 @@
     <ClCompile Include="OutputWnd.cpp">
       <Filter>DockBar</Filter>
     </ClCompile>
-    <ClCompile Include="CaptureWindow.cpp">
-      <Filter>Source</Filter>
-    </ClCompile>
-    <ClCompile Include="DIBSectionLite.cpp">
-      <Filter>Source</Filter>
-    </ClCompile>
-    <ClCompile Include="FileFinder.cpp">
-      <Filter>Source</Filter>
-    </ClCompile>
-    <ClCompile Include="FilePath.cpp">
-      <Filter>Source</Filter>
-    </ClCompile>
-    <ClCompile Include="GColorData.cpp">
-      <Filter>Source</Filter>
-    </ClCompile>
-    <ClCompile Include="GEnvVar.cpp">
-      <Filter>Source</Filter>
-    </ClCompile>
-    <ClCompile Include="GFileUtil.cpp">
-      <Filter>Source</Filter>
-    </ClCompile>
-    <ClCompile Include="GLib.cpp">
-      <Filter>Source</Filter>
-    </ClCompile>
-    <ClCompile Include="GLibColor.cpp">
-      <Filter>Source</Filter>
-    </ClCompile>
-    <ClCompile Include="GLibRes.cpp">
-      <Filter>Source</Filter>
-    </ClCompile>
-    <ClCompile Include="GMapLib.cpp">
-      <Filter>Source</Filter>
-    </ClCompile>
-    <ClCompile Include="..\inc\GPoint.cpp">
-      <Filter>Source</Filter>
-    </ClCompile>
-    <ClCompile Include="GStatusFlag.cpp">
-      <Filter>Source</Filter>
-    </ClCompile>
-    <ClCompile Include="GViewInfo.cpp">
-      <Filter>Source</Filter>
-    </ClCompile>
-    <ClCompile Include="Ini.cpp">
-      <Filter>Source</Filter>
-    </ClCompile>
-    <ClCompile Include="Initiator.cpp">
-      <Filter>Source</Filter>
-    </ClCompile>
-    <ClCompile Include="io.cpp">
-      <Filter>Source</Filter>
-    </ClCompile>
-    <ClCompile Include="MapConfigMgr.cpp">
-      <Filter>Source</Filter>
-    </ClCompile>
-    <ClCompile Include="MapDataMgr.cpp">
-      <Filter>Source</Filter>
-    </ClCompile>
-    <ClCompile Include="MapGeneratorDlg.cpp">
-      <Filter>Source</Filter>
-    </ClCompile>
-    <ClCompile Include="PathFile.cpp">
-      <Filter>Source</Filter>
-    </ClCompile>
-    <ClCompile Include="PointDisplay.cpp">
-      <Filter>Source</Filter>
-    </ClCompile>
-    <ClCompile Include="SafeQueue.cpp">
-      <Filter>Source</Filter>
-    </ClCompile>
     <ClCompile Include="TmsMgr.cpp">
       <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="ShapeT.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="GPoint.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="LocalOverlay.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="MapSources.cpp">
       <Filter>Source</Filter>
     </ClCompile>
   </ItemGroup>
@@ -863,6 +695,10 @@
     </None>
     <None Include="res\cursor\14_CoordCapture.cur">
       <Filter>Resource</Filter>
+    </None>
+    <None Include="base-map.xml" />
+    <None Include="BaseMapDetails.inc">
+      <Filter>Source</Filter>
     </None>
   </ItemGroup>
 </Project>

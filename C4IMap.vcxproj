@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -178,7 +178,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NOMINMAX;_WINDOWS;NDEBUG;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NOMINMAX;_WINDOWS;NDEBUG;_CRT_SECURE_NO_WARNINGS;C4MAP_SHAPE_MODE=2;C4MAP_TILE_TREE_ONLY=1;C4MAP_RASTER_MODE=2;C4MAP_CIB_MODE=2;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <AdditionalIncludeDirectories>../gdal_sdk/include;../LibSrc/include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -191,7 +191,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <OutputFile>D:/work/상황도/Release/Bin/C4IMap.exe</OutputFile>
-      <AdditionalDependencies>GeoDC.lib;GeoTrans.lib;geotiff.lib;tiff.lib;gdal_i.lib;AltitudeMgr.lib;rpcrt4.lib</AdditionalDependencies>
+      <AdditionalDependencies>$(ProjectDir)OverlaySDK\bin\x64\Release\C4Overlay.lib;GeoDC.lib;GeoTrans.lib;geotiff.lib;tiff.lib;gdal_i.lib;AltitudeMgr.lib;rpcrt4.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(ProjectDir)..\LibSrc\lib\$(Platform)\$(Configuration);$(ProjectDir)..\LibSrc\lib;$(ProjectDir)..\gdal_sdk\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
     </Link>
@@ -207,13 +207,15 @@
     </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="GPoint.h" />
+    <ClInclude Include="MapSources.h" />
+    <ClInclude Include="MapBuildOptions.h" />
+    <ClInclude Include="LocalOverlay.h" />
     <ClInclude Include="C4IMap.h" />
     <ClInclude Include="C4IMapDoc.h" />
     <ClInclude Include="C4IMapView.h" />
     <ClInclude Include="C4IMapViewHeader.h" />
-    <ClInclude Include="CaptureWindow.h" />
     <ClInclude Include="ComDefStringValue.h" />
-    <ClInclude Include="GlobalVar.h" />
     <ClInclude Include="IndexMapView.h" />
     <ClInclude Include="MapObjectManager.h" />
     <ClInclude Include="MapObjectOrderList.h" />
@@ -221,51 +223,18 @@
     <ClInclude Include="MapPropertiesWnd.h" />
     <ClInclude Include="MessageDefine.h" />
     <ClInclude Include="OutputLogList.h" />
-    <ClInclude Include="Dbf.h" />
-    <ClInclude Include="DIBSectionLite.h" />
-    <ClInclude Include="DisplayElement.h" />
-    <ClInclude Include="FileFinder.h" />
-    <ClInclude Include="FilePath.h" />
-    <ClInclude Include="Flags.h" />
     <ClInclude Include="framework.h" />
-    <ClInclude Include="GColorData.h" />
-    <ClInclude Include="GEnvVar.h" />
-    <ClInclude Include="GFileUtil.h" />
-    <ClInclude Include="GLib.h" />
-    <ClInclude Include="GlobalInfo.h" />
-    <ClInclude Include="GMapInfo.h" />
-    <ClInclude Include="GMapLib.h" />
-    <ClInclude Include="GStatusFlag.h" />
-    <ClInclude Include="GViewInfo.h" />
-    <ClInclude Include="Ini.h" />
-    <ClInclude Include="Initiator.h" />
-    <ClInclude Include="io.hpp" />
     <ClInclude Include="ItemView.h" />
     <ClInclude Include="LayerView.h" />
     <ClInclude Include="MainFrm.h" />
-    <ClInclude Include="MapConfigMgr.h" />
-    <ClInclude Include="MapDataMgr.h" />
-    <ClInclude Include="MapGeneratorDlg.h" />
     <ClInclude Include="IndexMapWnd.h" />
     <ClInclude Include="OutputSearchList.h" />
     <ClInclude Include="OutputWnd.h" />
-    <ClInclude Include="PathFile.h" />
     <ClInclude Include="pch.h" />
-    <ClInclude Include="PointDisplay.h" />
     <ClInclude Include="pointStruct.h" />
     <ClInclude Include="PropertiesWnd.h" />
     <ClInclude Include="Resource.h" />
-    <ClInclude Include="SafeQueue.h" />
     <ClInclude Include="ShapeT.h" />
-    <ClInclude Include="Shp.h" />
-    <ClInclude Include="shpCommon.h" />
-    <ClInclude Include="shpDBF.h" />
-    <ClInclude Include="ShpMgr.h" />
-    <ClInclude Include="shpMultiPoint.h" />
-    <ClInclude Include="shpObject.h" />
-    <ClInclude Include="shpPoint.h" />
-    <ClInclude Include="shpPoly.h" />
-    <ClInclude Include="shpPolygon.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="TmsMgr.h" />
     <ClInclude Include="TypeView.h" />
@@ -273,7 +242,9 @@
     <ClInclude Include="ViewTree.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\inc\GPoint.cpp" />
+    <ClCompile Include="GPoint.cpp" />
+    <ClCompile Include="MapSources.cpp" />
+    <ClCompile Include="LocalOverlay.cpp" />
     <ClCompile Include="C4IMap.cpp" />
     <ClCompile Include="C4IMapDoc.cpp" />
     <ClCompile Include="C4IMapView.cpp" />
@@ -283,30 +254,10 @@
     <ClCompile Include="C4IMapView_Init.cpp" />
     <ClCompile Include="C4IMapView_Menu.cpp" />
     <ClCompile Include="C4IMapView_MouseEvent.cpp" />
-    <ClCompile Include="CaptureWindow.cpp" />
-    <ClCompile Include="Dbf.cpp" />
-    <ClCompile Include="DIBSectionLite.cpp" />
-    <ClCompile Include="FileFinder.cpp" />
-    <ClCompile Include="FilePath.cpp" />
-    <ClCompile Include="GColorData.cpp" />
-    <ClCompile Include="GEnvVar.cpp" />
-    <ClCompile Include="GFileUtil.cpp" />
-    <ClCompile Include="GLib.cpp" />
-    <ClCompile Include="GLibColor.cpp" />
-    <ClCompile Include="GLibRes.cpp" />
-    <ClCompile Include="GMapLib.cpp" />
-    <ClCompile Include="GStatusFlag.cpp" />
-    <ClCompile Include="GViewInfo.cpp" />
     <ClCompile Include="IndexMapView.cpp" />
-    <ClCompile Include="Ini.cpp" />
-    <ClCompile Include="Initiator.cpp" />
-    <ClCompile Include="io.cpp" />
     <ClCompile Include="ItemView.cpp" />
     <ClCompile Include="LayerView.cpp" />
     <ClCompile Include="MainFrm.cpp" />
-    <ClCompile Include="MapConfigMgr.cpp" />
-    <ClCompile Include="MapDataMgr.cpp" />
-    <ClCompile Include="MapGeneratorDlg.cpp" />
     <ClCompile Include="MapObjectManager.cpp" />
     <ClCompile Include="MapObjectOrderList.cpp" />
     <ClCompile Include="MapObjectViewTree.cpp" />
@@ -315,25 +266,14 @@
     <ClCompile Include="OutputLogList.cpp" />
     <ClCompile Include="OutputSearchList.cpp" />
     <ClCompile Include="OutputWnd.cpp" />
-    <ClCompile Include="PathFile.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="PointDisplay.cpp" />
     <ClCompile Include="PropertiesWnd.cpp" />
-    <ClCompile Include="SafeQueue.cpp" />
     <ClCompile Include="ShapeT.cpp" />
-    <ClCompile Include="Shp.cpp" />
-    <ClCompile Include="shpDBF.cpp" />
-    <ClCompile Include="ShpMgr.cpp" />
-    <ClCompile Include="shpMultiPoint.cpp" />
-    <ClCompile Include="shpObject.cpp" />
-    <ClCompile Include="shpPoint.cpp" />
-    <ClCompile Include="shpPoly.cpp" />
-    <ClCompile Include="shpPolygon.cpp" />
     <ClCompile Include="TmsMgr.cpp" />
     <ClCompile Include="TypeView.cpp" />
     <ClCompile Include="ViewList.cpp" />
@@ -500,6 +440,50 @@
     <None Include="res\ribbon.mfcribbon-ms" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <Target Name="BuildC4OverlaySDK" BeforeTargets="PrepareForBuild" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <MSBuild Projects="$(ProjectDir)OverlaySDK\LibSrc\Overlay\Overlay.vcxproj" Targets="Build" Properties="Configuration=Release;Platform=x64" />
+  </Target>
+  <Target Name="CopyC4OverlaySDK" AfterTargets="Build" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Copy SourceFiles="$(ProjectDir)OverlaySDK\bin\x64\Release\C4Overlay.dll" DestinationFolder="$(TargetDir)" SkipUnchangedFiles="true" />
+  </Target>
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
+  <Target Name="CopyMapSourcesCatalog" AfterTargets="Build" Condition="!Exists('$(TargetDir)map-sources.xml')">
+    <Copy SourceFiles="$(ProjectDir)map-sources.xml" DestinationFolder="$(TargetDir)" />
+  </Target>
+  <ItemGroup>
+    <ClInclude Include="BaseMapOptions.h" />
+    <ClInclude Include="MapDecoration.h" />
+    <None Include="BaseMapDetails.inc" />
+    <None Include="base-map.xml" />
+  </ItemGroup>
+  <Target Name="CopyBaseMapCatalog" AfterTargets="Build" Condition="!Exists('$(TargetDir)base-map.xml')">
+    <Copy SourceFiles="$(ProjectDir)base-map.xml" DestinationFolder="$(TargetDir)" />
+  </Target>
+  <ItemGroup>
+    <ClInclude Include="TerrainLayer.h" />
+    <ClInclude Include="TerrainElevation.h" />
+  </ItemGroup>
+  <PropertyGroup>
+    <TerrainSdkRoot Condition="'$(TerrainSdkRoot)'==''">D:\work1\libsrc-sdk-work-20260917\libsrc</TerrainSdkRoot>
+  </PropertyGroup>
+  <Target Name="BuildTerrainElevation" BeforeTargets="PrepareForBuild" Condition="'$(Platform)'=='x64'">
+    <MSBuild Projects="$(TerrainSdkRoot)\TerrainElevation\TerrainElevation.vcxproj" Targets="Build" Properties="Configuration=$(Configuration);Platform=x64;GdalSdkDir=$(ProjectDir)..\gdal_sdk" />
+  </Target>
+  <Target Name="CopyTerrainElevation" AfterTargets="Build" Condition="'$(Platform)'=='x64'">
+    <Copy SourceFiles="$(TerrainSdkRoot)\bin\x64\$(Configuration)\TerrainElevation.dll" DestinationFolder="$(TargetDir)" SkipUnchangedFiles="true" />
+  </Target>
+  <ItemGroup>
+    <ClInclude Include="TerrainTileLayer.h" />
+    <ClInclude Include="TerrainTiles.h" />
+  </ItemGroup>
+  <PropertyGroup>
+    <TerrainSdkRoot Condition="'$(TerrainSdkRoot)'==''">D:\work1\libsrc-sdk-work-20260917\libsrc</TerrainSdkRoot>
+  </PropertyGroup>
+  <Target Name="BuildTerrainTiles" BeforeTargets="PrepareForBuild" Condition="'$(Platform)'=='x64'">
+    <MSBuild Projects="$(TerrainSdkRoot)\TerrainTiles\TerrainTiles.vcxproj" Targets="Build" Properties="Configuration=$(Configuration);Platform=x64;GdalSdkDir=$(ProjectDir)..\gdal_sdk" />
+  </Target>
+  <Target Name="CopyTerrainTiles" AfterTargets="Build" Condition="'$(Platform)'=='x64'">
+    <Copy SourceFiles="$(TerrainSdkRoot)\bin\x64\$(Configuration)\TerrainTiles.dll" DestinationFolder="$(TargetDir)" SkipUnchangedFiles="true" />
+  </Target>
 </Project>

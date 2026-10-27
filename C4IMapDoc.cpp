@@ -21,6 +21,7 @@
 #endif
 
 #include "C4IMapDoc.h"
+#include "C4IMapView.h"
 
 #include <propkey.h>
 
@@ -134,6 +135,8 @@ void CC4IMapDoc::Serialize(CArchive& ar)
 
 void CC4IMapDoc::DeleteContents()
 {
+    POSITION pos=GetFirstViewPosition();
+    while(pos){auto view=DYNAMIC_DOWNCAST(CC4IMapView,GetNextView(pos));if(view)view->ResetLocalOverlay();}
 /*
 	INT_PTR		inx, count;
 	ULONG		nRefCount;
@@ -225,3 +228,9 @@ void CC4IMapDoc::Dump(CDumpContext& dc) const
 
 
 // CC4IMapDoc 명령
+
+BOOL CC4IMapDoc::SaveModified(){
+    POSITION pos=GetFirstViewPosition();
+    while(pos){auto view=DYNAMIC_DOWNCAST(CC4IMapView,GetNextView(pos));if(view && !view->SaveLocalOverlayIfModified())return FALSE;}
+    return CDocument::SaveModified();
+}

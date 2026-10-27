@@ -33,6 +33,7 @@ public:
 // 재정의입니다.
 public:
 	virtual BOOL OnNewDocument();
+    virtual BOOL SaveModified();
 	virtual void Serialize(CArchive& ar);
 	virtual void DeleteContents();
 #ifdef SHARED_HANDLERS
