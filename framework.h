@@ -48,7 +48,7 @@
 
 
 
-#include "GlobalInfo.h"
+//#include "GlobalInfo.h"
 #include "../inc/Useful.h"
 #include "includeGeoTrans.h"
 #include "IncludeGeoDC.h"
