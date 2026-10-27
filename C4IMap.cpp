@@ -20,14 +20,14 @@
 #include "MainFrm.h"
 #include "C4IMapDoc.h"
 #include "C4IMapView.h"
-#include "FilePath.h"
+//#include "FilePath.h"
 
 //#include "../inc/ICOPS2010V11520/ICOPS_Framework/CAppContext.h"
 //#include "../inc/ICOPS2010V11520/ICOPS_WarSym/IWarSymFactory.h"
 //#include "../inc/ICOPS2010V11520/ICOPS_LogManager/CLog.h"
 
 #define _GLOBAL_DECLARATION_
-#include "GlobalVar.h"
+//#include "GlobalVar.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -289,7 +289,7 @@ void CC4IMapApp::Begin(void)
 
 	// subifox,06.06.19
 	// 1. 작업 폴더 구하기
-	CFilePath::ResetRoot();
+	//CFilePath::ResetRoot();
 }
 
 //void CC4IMapApp::End(void)

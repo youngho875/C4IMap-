@@ -24,10 +24,12 @@
   <ScaleStatus>true</ScaleStatus>
   <ScaleBar>true</ScaleBar>
   <Compass>true</Compass>
+  <!--
   <Elevation>
     <Path>D:/map/strm</Path>
     <visual>false</visual>
   </Elevation>
+  -->
   <TerrainLocal>
     <LayerJson>D:/map/terrain/layer.json</LayerJson>
     <visual>false</visual>
