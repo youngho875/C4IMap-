@@ -4,6 +4,7 @@
 #include "../inc/define.h"
 #include "MessageDefine.h"
 #include <vector>
+#include <map>
 
 /////////////////////////////////////////////////////////////////////////////
 // CMapObjectViewTree 창입니다.
@@ -14,6 +15,7 @@ class CMapObjectViewTree : public CTreeCtrl
 public:
 	CMapObjectViewTree();
 
+	void RefreshLocalShapeTree();
 	BOOL m_bAutoScale;	// 축척별 자동 설정 여부
 	
 	HTREEITEM InsertMapObjectLayer(CString strCategory, CString strLayerName, MAP_PRIMITIVETYPE nStypeType, int nLayerIndex);	// 지도 레이어 데이터 추가
@@ -39,6 +41,14 @@ public:
 	BOOL GetLayerIndexByCategory(CString strCategoryName, std::vector<int> &vLayerIndex);
 
 private:
+    HTREEITEM m_baseRoot=nullptr;
+    std::map<HTREEITEM,int> m_baseItems;
+    HTREEITEM m_localShapeRoot=nullptr;
+    std::vector<HTREEITEM> m_sourceRoots;
+    std::map<HTREEITEM,size_t> m_sourceItems;
+    void RefreshSourceTree();
+    std::map<HTREEITEM,size_t> m_localShapeItems;
+    void ApplyLocalShapeChecks(HTREEITEM item);
 	// 지도 레이어 트리 아이템 맵
 	CMapStringToPtr m_pMapCategoryName; /**< Map for Category name */
 	CMapStringToPtr m_pMapLayerName;    /**< Map for Layer name */
