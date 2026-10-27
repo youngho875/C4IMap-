@@ -13,6 +13,9 @@
 //
 
 #pragma once
+#include "MapFrameCache.h"
+#include "MapSources.h"
+#include "LocalOverlay.h"
 
 #include "C4IMapDoc.h"
 #include "MainFrm.h"
@@ -20,13 +23,13 @@
 #include "GeoDC/Coord.h"
 #include "GeoDC/CoordMgr.h"
 
-#include "PointDisplay.h"
-#include "FilePath.h"
+//#include "PointDisplay.h"
+//#include "FilePath.h"
 #include "TmsMgr.h"
-#include "MapGeneratorDlg.h"
-#include "CaptureWindow.h"
+//#include "MapGeneratorDlg.h"
+//#include "CaptureWindow.h"
 #include "ComDefStringValue.h"
-#include "../inc/GPoint.h"
+#include "GPoint.h"
 #include "../inc/define_struct.h"
 
 //#include "ShapeT.h"
@@ -159,8 +162,8 @@ public:
 	CPoint m_ptZoomWindowLT, m_ptZoomWindowBR;
 	CPoint m_ptZoomStart, m_ptZoomEnd;
 
-	CCaptureWindow scrCap;
-	CPointDisplay  m_PointDisplay;
+	//CCaptureWindow scrCap;
+	//CPointDisplay  m_PointDisplay;
 
 	//CObjectProp* m_adjObj;
 	CTmsMgr m_TmsMgr;
@@ -256,9 +259,9 @@ private:
 	GPoint m_fHookPoint;
 
 public:
-	CFilePath	m_pathConfig;
-	CFilePath	m_pathDTED;
-	CFilePath	m_pathScrCap;
+	//CFilePath	m_pathConfig;
+	//CFilePath	m_pathDTED;
+	//CFilePath	m_pathScrCap;
 
 	MAP_STATUS_INFO	m_pStatusInfo; /**< 상태바 정보 */
 
@@ -271,7 +274,7 @@ public:
 
 	MOUSE_STATE m_pMouseOldStatus;	/**< 마우스 변경 이전 상태 */
 
-	CMapGeneratorDlg* m_generateDlg;
+	//CMapGeneratorDlg* m_generateDlg;
 
 public:
 	CMainFrame* get_mainfrm();
@@ -342,13 +345,34 @@ protected:
 protected:
 	afx_msg void OnFilePrintPreview();
 	afx_msg void OnRButtonUp(UINT nFlags, CPoint point);
+    CPoint m_localClick;
+    void ShowLocalFeature(CPoint point);
+    afx_msg void OnLocalSettings();
+    afx_msg void OnLocalIdentify();
+    afx_msg void OnLocalToggle();
 	afx_msg void OnContextMenu(CWnd* pWnd, CPoint point);
-	DECLARE_MESSAGE_MAP()
+	CLocalOverlay m_localOverlay;
+    afx_msg void OnLocalOverlayCommand(UINT id);
+    afx_msg void OnUpdateLocalOverlay(CCmdUI* ui);
+    afx_msg void OnCaptureChanged(CWnd* wnd);
+    virtual BOOL PreTranslateMessage(MSG* msg);
+    afx_msg void OnMapSourcesXml();
+    afx_msg void OnTimer(UINT_PTR id);
+    DECLARE_MESSAGE_MAP()
 
 public:
+    CLocalOverlay& OverlayLayers(){return m_localOverlay;}
+    void RefreshOverlayLayers();
+    afx_msg void OnOverlayLayerNew();
+    afx_msg void OnOverlayLayerOpen();
+    afx_msg void OnOverlayLayerSave();
+    BOOL SaveLocalOverlayIfModified();
+    void ResetLocalOverlay(){m_localOverlay.Clear();RefreshOverlayLayers();Invalidate(FALSE);}
 	virtual void OnInitialUpdate();
 	virtual void OnPrepareDC(CDC* pDC, CPrintInfo* pInfo = NULL);
-	afx_msg void OnPaint();
+	CMapFrameCache m_mapFrameCache;
+    afx_msg void OnPaint();
+    afx_msg BOOL OnEraseBkgnd(CDC* pDC);
 	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
 	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
 	afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
@@ -385,7 +409,14 @@ public:
 
 public:
 	// 투명도 
-	//afx_msg void OnOverlayDraw();
+	afx_msg void OnOverlayDraw();
+    afx_msg void OnDisplayProjection(UINT id);
+    afx_msg void OnMapRotate();
+    afx_msg void OnUpdateMapRotate(CCmdUI* ui);
+    bool m_rotationDragging=false;
+    CPoint m_rotationStart;
+    double m_rotationStartAngle=0;
+    afx_msg void OnUpdateDisplayProjection(CCmdUI* ui);
 	//afx_msg void OnUpdateOverlayDraw(CCmdUI* pCmdUI);
 	//afx_msg void OnOverlayNew();
 	//afx_msg void OnUpdateOverlayNew(CCmdUI* pCmdUI);

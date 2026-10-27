@@ -82,6 +82,7 @@ void CC4IMapView::OnMenuMouseBase()
 	SetMouseState(MOUSE_DEFAULT);
 	//SetMouseState(MOUSE_COPLAY);
 }
+
 void CC4IMapView::OnUpdateMenuMouseBase(CCmdUI* pCmdUI)
 {
 	// 지도 정상 로드 시 able, 아닐 경우 disable

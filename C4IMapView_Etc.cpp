@@ -1,5 +1,7 @@
 #include "pch.h"
 #include "C4IMapViewHeader.h"
+#include "TerrainLayer.h"
+#include "TerrainTileLayer.h"
 
 
 
@@ -12,8 +14,8 @@ void CC4IMapView::ScreenCaptureRouting()
 	scrCapture.CaptureAs(hWindow);
 		*/
 
-	scrCap.SetWindow(this->GetSafeHwnd());
-	scrCap.Capture();
+	//scrCap.SetWindow(this->GetSafeHwnd());
+	//scrCap.Capture();
 	return;//return 0;
 }
 
@@ -199,14 +201,14 @@ void CC4IMapView::UpdateStatusBar(CPoint point)
 	strrGARS.Format("GARS: %s |", strGARS);
 	strStatus += strrGARS;
 
-	double height = 0.0f;
-	if (mHeights != NULL)
-	{
-		height = mHeights->get_Heights(m_pStatusInfo.pGeo_y, m_pStatusInfo.pGeo_x);
-		strHeight.Format(" Alt: %fm", height);
-	}
-	else
-		strHeight = " Alt: N/A";
+    // The main map uses the geographic display projection; derive the sample
+    // directly from it instead of reusing unrelated legacy DTED coordinates.
+    double terrainLon=m_pStatusInfo.pGeo_x,terrainLat=m_pStatusInfo.pGeo_y;
+    if(m_pCoordMgr->m_bFlat && m_pCoordMgr->m_fScale>0){
+        terrainLon=127.031+(point.x-m_pCoordMgr->m_fCenterX)/(47.5*m_pCoordMgr->m_fScale);
+        terrainLat=37.0861-(point.y-m_pCoordMgr->m_fCenterY)/(60.0*m_pCoordMgr->m_fScale);
+    }
+    strHeight=TerrainAltitude(terrainLon,terrainLat);
 	strStatus += strHeight;
 
 	m_pStatusInfo.strStatusCoord = strStatus;

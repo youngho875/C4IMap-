@@ -5,6 +5,7 @@
 
 BOOL CC4IMapView::HitestDisplayPoint(double fXCoord, double fYCoord, double fCenterX, double fCenterY, double fScale)
 {
+	/*
 	if (m_PointDisplay.ResearchHookPoint(fXCoord, fYCoord, fCenterX, fCenterY, fScale) != -1)
 	{
 		m_nHookType = HOOKED_DISPLAY_POINT;
@@ -26,5 +27,6 @@ BOOL CC4IMapView::HitestDisplayPoint(double fXCoord, double fYCoord, double fCen
 	{
 		m_PointDisplay.m_nHookPoint = -1;
 	}
+	*/
 	return FALSE;
 }

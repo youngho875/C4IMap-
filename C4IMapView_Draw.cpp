@@ -1,7 +1,13 @@
-#include "pch.h"
+ï»¿#include "pch.h"
+#include "DisplayProjection.h"
+#include "ProjectedRaster.h"
 #include "C4IMapViewHeader.h"
 #include <iostream>
 #include "WorldMapView.h"
+#include "BaseMapOptions.h"
+#include "MapDecoration.h"
+#include "TerrainLayer.h"
+#include "TerrainTileLayer.h"
 
 
 
@@ -14,6 +20,7 @@ void CC4IMapView::draw_maindc_only(CPoint ptNewPoint)
 	BufferDC.FillSolidRect(rect, RGB(15, 15, 15));
 	BufferDC.BitBlt(ptNewPoint.x, ptNewPoint.y, fWidth, fHeight, m_dcMainTemp, 0, 0, SRCCOPY);
 
+	DrawMapDecoration(&BufferDC,m_pCoordMgr,get_mainfrm(),rect);
 	m_dcMain->BitBlt(0, 0, fWidth, fHeight, &BufferDC, 0, 0, SRCCOPY);
 }
 
@@ -32,108 +39,61 @@ void CC4IMapView::DrawSituation(BOOL bMapRedraw, BOOL bSymRedraw, BOOL bMCRCRedr
 
     // TMS and all overlays share GeoDC's geographic display projection.
     PrepareWorldMapView(*m_pCoordMgr);
+    const auto savedCenterX=m_pCoordMgr->m_fCenterX;
+    const auto savedCenterY=m_pCoordMgr->m_fCenterY;
 
-	//if (bMapRedraw)
-	//{
-	//	DrawMap();    //DrawOverlay(); 
-	//}
-
-	//if (m_bShape)
-	//{
-	//	DrawShape();
-	//}
-
-	
-
-/*
-	if (m_bDTED)		DrawDTED();
-	if (bSymRedraw)	DrawSym();
-	if (bMCRCRedraw)	DrawMCRC();
-*/
-	//if (m_pDlgOverlayControler->IsWindowVisible() == TRUE)  DrawOverlay();
-
-	((CDC*)m_dcMainTemp)->FillSolidRect(0, 0, fWidth, fHeight, RGB(10, 10, 10));
-	//COLORREF colorOldBack4Sym;
-	COLORREF colorOldBack4DTED;
-	COLORREF colorOldBack4Raster;
-	COLORREF colorOldBack4Shp;
-
-	// TRANSPARENT Color Setting
-	//colorOldBack4Sym = m_dcSymLayer->SetBkColor(RGB(0, 0, 0));
-	colorOldBack4DTED = m_dcDTEDLayer->SetBkColor(RGB(0, 0, 0));
-	colorOldBack4Raster = m_dcRasterLayer->SetBkColor(RGB(0, 0, 0));
-	colorOldBack4Shp = m_dcShpLayer->SetBkColor(RGB(0, 0, 0));
-
-	CRect ClientRect;
+    CRect ClientRect;
 	GetClientRect(&ClientRect);
-	if (m_bRaster)
+    const std::array<double,12> cacheKey={{double(fWidth),double(fHeight),
+        savedCenterX,savedCenterY,m_pCoordMgr->m_fScale,double(m_pCoordMgr->m_bFlat),
+        double(DisplayProjection().Kind()),DisplayProjection().Angle(),
+        double(pStartPoint.x),double(pStartPoint.y),double(m_bRaster),double(m_bShape)}};
+    m_mapFrameCache.Prepare((int)fWidth,(int)fHeight,cacheKey);
+    if(bMapRedraw)
+		m_mapFrameCache.InvalidateFrom();
+    if(!m_mapFrameCache.Restore(CMapFrameCache::Shapes,m_dcMainTemp))
 	{
-		//ÄÃ·¯ À§¼º¿µ»ó
-		//mRasterMgr.DrawTiff(m_dcMainTemp, m_pCoordMgr->m_fCenterX, m_pCoordMgr->m_fCenterY, m_pCoordMgr->m_fScale /*, m_DlgBrightness.m_iBrightness, m_DlgBrightness.m_bBlur*/);////¹à±â
+        if(!m_mapFrameCache.Restore(CMapFrameCache::Sources,m_dcMainTemp))
+		{
+            if(!m_mapFrameCache.Restore(CMapFrameCache::Background,m_dcMainTemp))
+			{
+                if(!m_mapFrameCache.Restore(CMapFrameCache::Elevation,m_dcMainTemp))
+				{
+                    m_dcMainTemp->FillSolidRect(0,0,(int)fWidth,(int)fHeight,RGB(10,10,10));
+                    DrawProjectedRaster(m_dcMainTemp,m_pCoordMgr,ClientRect,[](CDC* dc,CCoordMgr* c,CRect r){
+                        TerrainLayer().Draw(dc,c,r);TerrainLocalLayer().Draw(dc,c,r);TerrainServerLayer().Draw(dc,c,r);
+                    });
+                    m_mapFrameCache.Store(CMapFrameCache::Elevation,m_dcMainTemp);
+                }
+#if C4MAP_ENABLE_LOCAL
+                if(BaseMapVisible(2))
+				{
+					m_TmsMgr.Load(ClientRect);
+					m_TmsMgr.Draw(m_dcMainTemp);
+				}
+#endif
+                m_mapFrameCache.Store(CMapFrameCache::Background,m_dcMainTemp);
+            }
+            DrawProjectedRaster(m_dcMainTemp,m_pCoordMgr,ClientRect,[](CDC* dc,CCoordMgr* c,CRect){MapSources().Draw(dc,c);});
+            m_mapFrameCache.Store(CMapFrameCache::Sources,m_dcMainTemp);
+        }
+        DrawShape();
 
-		//if (m_pCoordMgr->m_fScale >= 1 && m_bRaster)
-		//	mRasterMgr.DrawCadrg(m_dcMainTemp, m_pCoordMgr->m_fCenterX, m_pCoordMgr->m_fCenterY, m_pCoordMgr->m_fScale,
-		//		ClientRect.left, ClientRect.top, ClientRect.right, ClientRect.bottom);
+        for(auto layer:{m_dcMapLayer,m_dcShpLayer,m_dcDTEDLayer,m_dcRasterLayer})
+            ::TransparentBlt(m_dcMainTemp->m_hDC,-pStartPoint.x,-pStartPoint.y,(int)fWidth,(int)fHeight, layer->m_hDC,0,0,(int)fWidth,(int)fHeight,RGB(0,0,0)); 
 
-	}
-
-
-	//if (m_bsatellite)
-	{
-		m_TmsMgr.Load(ClientRect);
-		m_TmsMgr.Draw(m_dcMainTemp);
-	}
-
-	//if (m_bShape)
-	{
-		DrawShape();
-	}
-
-
-	::TransparentBlt(m_dcMainTemp->m_hDC, -pStartPoint.x, -pStartPoint.y, fWidth, fHeight, m_dcMapLayer->m_hDC, 0, 0, fWidth, fHeight, RGB(0, 0, 0));
-
-	//m_pOverlayThread->Redraw(m_dcMainTemp->m_hDC, -pStartPoint.x, -pStartPoint.y);
-	::TransparentBlt(m_dcMainTemp->m_hDC, -pStartPoint.x, -pStartPoint.y, fWidth, fHeight, m_dcShpLayer->m_hDC, 0, 0, fWidth, fHeight, RGB(0, 0, 0));
-	::TransparentBlt(m_dcMainTemp->m_hDC, -pStartPoint.x, -pStartPoint.y, fWidth, fHeight, m_dcDTEDLayer->m_hDC, 0, 0, fWidth, fHeight, RGB(0, 0, 0));
-	::TransparentBlt(m_dcMainTemp->m_hDC, -pStartPoint.x, -pStartPoint.y, fWidth, fHeight, m_dcRasterLayer->m_hDC, 0, 0, fWidth, fHeight, RGB(0, 0, 0));
-	//::TransparentBlt(m_dcMainTemp->m_hDC, -pStartPoint.x, -pStartPoint.y, fWidth, fHeight, m_dcSymLayer->m_hDC, 0, 0, fWidth, fHeight, RGB(0, 0, 0));
-
-
-	//Åõ¸íµµº¸´Ù À§¿¡ Àü½ÃÇÏ·Á ÇßÀ¸³ª Åõ¸íµµ¿¡¼­ ¾ËÆÄ°ªÀ» Á¶Á¤ ÈÄ º¹±¸¸¦ ¾È½ÃÄÑ¹ö¸².
-	//ÃßÈÄ ÇØ°á ÈÄ Åõ¸íµµº¸´Ù À§¿¡ Àü½ÃÇÏµµ·Ï ¼ø¼­ º¯°æ ÇÊ¿ä.	
-	//m_pOverlayThread->Redraw(m_dcMainTemp->m_hDC, -pStartPoint.x, -pStartPoint.y);
-	//m_pCoordMgr->m_fCenterX = m_pCoordMgr->m_fCenterX - pStartPoint.x;
-	//m_pCoordMgr->m_fCenterY = m_pCoordMgr->m_fCenterY - pStartPoint.y;
-	//m_dcMainTemp->SetCoordMgr(m_pCoordMgr);
-	//DrawArmyTroop_Etc(m_dcMainTemp);
-
-
-	// HJYOO : Åõ¸íµµ¸¦ ±×¸°ÈÄ ÁÂÇ¥°ªÀ» ¿ø»óÅÂ·Î º¹±¸ÇÑ´Ù.
-	m_pCoordMgr->m_fCenterX = m_pCoordMgr->m_fCenterX + pStartPoint.x;
-	m_pCoordMgr->m_fCenterY = m_pCoordMgr->m_fCenterY + pStartPoint.y;
-	m_dcMainTemp->SetCoordMgr(m_pCoordMgr);
+        m_pCoordMgr->m_fCenterX=savedCenterX;
+		m_pCoordMgr->m_fCenterY=savedCenterY;
+        m_dcMainTemp->SetCoordMgr(m_pCoordMgr);
+        m_mapFrameCache.Store(CMapFrameCache::Shapes,m_dcMainTemp);
+    }
+    // Overlays/selection and decorations never contaminate the cached map.
+	m_localOverlay.Draw(m_dcMainTemp,m_pCoordMgr);
+	BufferDC.BitBlt(0, 0, fWidth, fHeight, m_dcMainTemp, 0, 0, SRCCOPY);
+    DrawMapDecoration(&BufferDC,m_pCoordMgr,get_mainfrm(),ClientRect);
 
 
 
-
-/*
-	DrawArmyTroop();
-*/
-//	::TransparentBlt(m_dcMainTemp->m_hDC, -pStartPoint.x, -pStartPoint.y, fWidth, fHeight, m_dcMapLayer->m_hDC, 0, 0, fWidth, fHeight, RGB(0, 0, 0));
-
-	/*
-		DrawOverlay();
-	*/
-
-
-	//m_pCoordMgr->m_fCenterX = m_pCoordMgr->m_fCenterX + pStartPoint.x;
-	//m_pCoordMgr->m_fCenterY = m_pCoordMgr->m_fCenterY + pStartPoint.y;
-	//m_dcMainTemp->SetCoordMgr(m_pCoordMgr);
-
-	m_dcMain->BitBlt(0, 0, fWidth, fHeight, m_dcMainTemp, 0, 0, SRCCOPY);
-	m_dcDTEDLayer->SetBkColor(colorOldBack4DTED);
-	m_dcRasterLayer->SetBkColor(colorOldBack4Raster);
-	m_dcShpLayer->SetBkColor(colorOldBack4Shp);
 	//m_dcSymLayer->SelectObject(&colorOldBack4Sym);
 	m_bIsDrawSituationInProcess = FALSE;
 
@@ -144,16 +104,17 @@ void CC4IMapView::DrawSituation(BOOL bMapRedraw, BOOL bSymRedraw, BOOL bMCRCRedr
 	*/
 	CPen pen, * p_pen;
 	pen.CreateStockObject(WHITE_PEN);
-	p_pen = m_dcMain->SelectObject(&pen);
+	p_pen = BufferDC.SelectObject(&pen);
 	CRect client_rect;
 	GetClientRect(&client_rect);
 	int center_x = client_rect.right / 2;
 	int center_y = client_rect.bottom / 2;
-	m_dcMain->MoveTo(center_x - 10, center_y);
-	m_dcMain->LineTo(center_x + 10, center_y);
-	m_dcMain->MoveTo(center_x, center_y - 10);
-	m_dcMain->LineTo(center_x, center_y + 10);
-	m_dcMain->SelectObject(p_pen);
+	BufferDC.MoveTo(center_x - 10, center_y);
+	BufferDC.LineTo(center_x + 10, center_y);
+	BufferDC.MoveTo(center_x, center_y - 10);
+	BufferDC.LineTo(center_x, center_y + 10);
+	BufferDC.SelectObject(p_pen);
+    m_dcMain->BitBlt(0, 0, fWidth, fHeight, &BufferDC, 0, 0, SRCCOPY);
 }
 
 void CC4IMapView::DrawMap()
@@ -212,12 +173,15 @@ void CC4IMapView::DrawMap()
 
 void CC4IMapView::DrawShape()
 {
+    if(!C4MAP_ENABLE_LOCAL)
+		return;
 	//ReInitializeDCs();
 	//m_dcShpLayer->FillSolidRect(0, 0, m_pCoordMgr->m_nDisplayViewWidth, m_pCoordMgr->m_nDisplayViewHeight, RGB(10, 0, 0));
 	//m_pMapDisplayMgr->ShapeMap(m_dcShpLayer);
 	//shapeDraw(m_dcMainTemp, m_pCoordMgr->m_fCenterX, m_pCoordMgr->m_fCenterY, m_pCoordMgr->m_fScale);
 	//mSh.shapeDraw(m_dcMainTemp, m_pCoordMgr->m_fCenterX, m_pCoordMgr->m_fCenterY, m_pCoordMgr->m_fScale);
 
+    get_mainfrm()->m_indexMap.BeginLocalFrame();
     DrawVisibleWorldCopies(*m_pCoordMgr, [&](double centerX) {
         get_mainfrm()->m_indexMap.shapeDraw(m_dcMainTemp, static_cast<float>(centerX),
             m_pCoordMgr->m_fCenterY, m_pCoordMgr->m_fScale);
@@ -241,7 +205,7 @@ void CC4IMapView::DrawShape(void)
 		m_pMapDataMgr->worldmapShpDraw(m_dcShpLayer, m_pCoordMgr->m_fScale, SHPT_POLYGONZ);
 	}
 
-	if (CMapDataMgr::IsWorldMapOpen())	//¼¼°è Áöµµ µµ½Ã 
+	if (CMapDataMgr::IsWorldMapOpen())	//ì„¸ê³„ ì§€ë„ ë„ì‹œ 
 	{
 		m_pMapDataMgr->worldmapShpDraw(m_dcShpLayer, m_pCoordMgr->m_fScale, SHPT_POLYGONZ);
 		//worldmapShpDraw(m_dcShpLayer, dZoomFactor, SHPT_ARC);
@@ -284,7 +248,7 @@ int main() {
 /*
 bool CC4IMapView::smallworldOpen(CString _filename)
 {
-	// ÀüÃ¼°æ·Î¿¡¼­ ÆÄÀÏ¸í ÃßÃâ
+	// ì „ì²´ê²½ë¡œì—ì„œ íŒŒì¼ëª… ì¶”ì¶œ
 	CString name = _filename.Right(_filename.GetLength() - _filename.ReverseFind('\\') - 1);
 
 	stSmallMap* pSmallMap = NULL;

@@ -6,7 +6,7 @@
 #include "C4IMapDoc.h"
 #include "C4IMapView.h"
 
-#include "GlobalInfo.h"
+//#include "GlobalInfo.h"
 
 
 

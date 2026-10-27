@@ -1,4 +1,5 @@
 #include "pch.h"
+#include "DisplayProjection.h"
 #include "C4IMapViewHeader.h"
 
 #include <iostream>
@@ -11,6 +12,17 @@ char		globalLong[10] = CENTERLONG;
 
 void CC4IMapView::OnMouseMove(UINT nFlags, CPoint point)
 {
+    if(m_rotationDragging)
+	{
+        DisplayProjection().SetAngle(m_pCoordMgr,m_rotationStartAngle+(point.x-m_rotationStart.x)*0.5);
+        Invalidate(FALSE);
+		return;
+    }
+    if(m_localOverlay.Move(point,m_pCoordMgr))
+	{
+		Invalidate(FALSE);
+		return;
+	}
 	CView::OnMouseMove(nFlags, point);
 
 	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
@@ -69,6 +81,7 @@ void CC4IMapView::OnMouseMove(UINT nFlags, CPoint point)
 
 void CC4IMapView::OnLButtonDown(UINT nFlags, CPoint point)
 {
+    if(m_localOverlay.Begin(point,m_pCoordMgr)){SetFocus();SetCapture();Invalidate(FALSE);return;}
 	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
 	
 	m_bPanning = (nFlags & (MK_SHIFT | MK_CONTROL)) == 0;
@@ -98,6 +111,14 @@ void CC4IMapView::OnLButtonDown(UINT nFlags, CPoint point)
 
 void CC4IMapView::OnLButtonUp(UINT nFlags, CPoint point)
 {
+    if(m_localOverlay.End(point,m_pCoordMgr))
+	{
+        RefreshOverlayLayers();
+		ReleaseCapture();
+		Invalidate(FALSE);
+		return;
+	}
+    const bool localClick=!m_bOnZoom && !(nFlags&(MK_SHIFT|MK_CONTROL)) && abs(point.x-m_ptMapMoveFirstPoint.x)<=3 && abs(point.y-m_ptMapMoveFirstPoint.y)<=3;
 	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
 
 	CView::OnLButtonUp(nFlags, point);
@@ -181,6 +202,11 @@ void CC4IMapView::OnLButtonUp(UINT nFlags, CPoint point)
 		DrawSituation(TRUE, TRUE, TRUE, TRUE);
 	}
 
+    if(localClick)
+	{
+		m_bMapMove=FALSE;
+		ShowLocalFeature(point);
+	}
 }
 
 
@@ -226,27 +252,6 @@ BOOL CC4IMapView::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
 	m_pCoordMgr->WorldXY2ScreenXY(geo_min_x, geo_min_y, &scr_min_x, &scr_min_y, nCenterX, nCenterY, m_pCoordMgr->m_fScale);
 	m_pCoordMgr->WorldXY2ScreenXY(geo_max_x, geo_max_y, &scr_max_x, &scr_max_y, nCenterX, nCenterY, m_pCoordMgr->m_fScale);
 
-	/*
-	if (m_bRaster != 0)
-	{
-		if (m_fPrevScale < 2.3 && m_pCoordMgr->m_fScale >= 2.3)
-		{
-			m_bRaster = FALSE;
-			//OnShowRaster();
-		}
-		else if (m_fPrevScale >= 2.3 && m_pCoordMgr->m_fScale < 10.0)
-		{
-			m_bRaster = FALSE;
-			//OnShowRaster();
-		}
-		else if (m_fPrevScale < 10.0 && m_pCoordMgr->m_fScale >= 10.0)
-		{
-			m_bRaster = FALSE;
-			//OnShowRaster();
-		}
-	}
-	*/
-
 	CString strScale;
 	strScale.Format("%f", m_pCoordMgr->m_fScale);
 	//get_mainfrm()->m_wndStatusBar.SetPaneText(5, strScale);
@@ -263,62 +268,48 @@ BOOL CC4IMapView::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
 	return CView::OnMouseWheel(nFlags, zDelta, pt);
 }
 
-void CC4IMapView::OnMButtonDown(UINT nFlags, CPoint point)
+void CC4IMapView::OnMButtonDown(UINT, CPoint point)
 {
-	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
-	m_ptPrevPoint = point;
-	m_ptMapMoveFirstPoint = point;
-
-	//	if(m_bRaster != 0)
-	//		return;
-
-	if (m_bPanning)
-	{
-		m_bMapMove = TRUE;
-		SetCapture();
-	}
-
-
-	CView::OnMButtonDown(nFlags, point);
+    m_localOverlay.Cancel();
+	mb_moving=FALSE;
+	m_bMapMove=FALSE;
+    m_rotationStart=point;
+	m_rotationStartAngle=DisplayProjection().Angle();
+    SetFocus();
+	SetCapture();
+	m_rotationDragging=true;
 }
-
-
-void CC4IMapView::OnMButtonUp(UINT nFlags, CPoint point)
+void CC4IMapView::OnMButtonUp(UINT, CPoint point)
 {
-	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
-	if (m_bPanning)
-	{
+    if(!m_rotationDragging)
+		return;
+
+    DisplayProjection().SetAngle(m_pCoordMgr,m_rotationStartAngle+(point.x-m_rotationStart.x)*0.5);
+    m_rotationDragging=false;
+	if(GetCapture()==this)
 		ReleaseCapture();
-	}
-
-	// if(m_bMapMove) m_bMapMove = FALSE;
-
-	if (m_bMapMove && point != m_ptMapMoveFirstPoint)
-	{
-		CPoint ptNewPoint;
-		ptNewPoint.x = -point.x + m_ptMapMoveFirstPoint.x;
-		ptNewPoint.y = -point.y + m_ptMapMoveFirstPoint.y;
-
-
-		m_pCoordMgr->m_fCenterX -= ptNewPoint.x;
-		m_pCoordMgr->m_fCenterY -= ptNewPoint.y;
-
-		//m_pOverlayThread->RePosition();
-		//if (m_pDlgOverlayControler->IsWindowVisible() == TRUE)
-		//	m_pDlgOverlayControler->UpDateGridDraw();
-
-		DrawSituation(TRUE, TRUE, TRUE, TRUE);
-		m_bMapMove = FALSE;
-	}
-
-	CView::OnMButtonUp(nFlags, point);
+	Invalidate(FALSE);
 }
 
+void CC4IMapView::OnRButtonUp(UINT /* nFlags */, CPoint point)
+{
+	if (m_localOverlay.IsDrawing())
+	{
+		m_localOverlay.Cancel();
+		ReleaseCapture();
+		Invalidate(FALSE);
+		return;
+	}
+	m_localClick = point;
+	ClientToScreen(&point);
+	OnContextMenu(this, point);
+}
 
 MOUSE_STATE CC4IMapView::GetMouseState()
 {
 	return m_pMouseState;
 }
+
 void CC4IMapView::SetMouseState(MOUSE_STATE pState)
 {
 
