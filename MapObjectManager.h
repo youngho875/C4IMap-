@@ -18,6 +18,7 @@ class CMapObjectManager : public CDockablePane
 {
 // 생성입니다.
 public:
+    void RefreshLocalShapeTree(){m_wndMapObjectViewTree.RefreshLocalShapeTree();}
 	CMapObjectManager();
 	virtual ~CMapObjectManager();
 	

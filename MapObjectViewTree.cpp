@@ -1,5 +1,7 @@
 
 #include "pch.h"
+#include "BaseMapOptions.h"
+#include "MapSources.h"
 #include "C4IMap.h"
 #include "Mainfrm.h"
 #include "C4IMapView.h"
@@ -144,6 +146,7 @@ void CMapObjectViewTree::OnNMCustomdraw(NMHDR *pNMHDR, LRESULT *pResult)
 // 모든 아이템 삭제
 void CMapObjectViewTree::RemoveAllMapObjectViewItems(BOOL bInitTitle)
 {
+    m_baseRoot=nullptr;m_baseItems.clear();m_localShapeItems.clear();m_localShapeRoot=nullptr;m_sourceRoots.clear();m_sourceItems.clear();
 	m_pMapCategoryName.RemoveAll();
 	m_pMapLayerName.RemoveAll();   
 	m_pMapFeatureName.RemoveAll(); 
@@ -168,8 +171,7 @@ void CMapObjectViewTree::RemoveAllMapObjectViewItems(BOOL bInitTitle)
 	}
 
 	// 소멸 시에는 타이틀을 추가하지 않도록 한다.
-	if(bInitTitle == TRUE)
-		InsertMapObjectTitle();
+	if(bInitTitle == TRUE){InsertMapObjectTitle();RefreshLocalShapeTree();}
 }
 
 // 트리 아이템 삭제
@@ -221,6 +223,13 @@ void CMapObjectViewTree::RemoveMapKey(int nItemType, CString strMyName, CString 
 
 void CMapObjectViewTree::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
+    if(nChar==VK_SPACE)
+	{
+		SetCheckEventItem(GetSelectedItem());
+		return;
+	}
+
+    CTreeCtrl::OnKeyDown(nChar,nRepCnt,nFlags);
 	// 체크 박스에 영향을 주어 주석처리함
 	//CTreeCtrl::OnKeyDown(nChar, nRepCnt, nFlags);
 }
@@ -323,6 +332,7 @@ void CMapObjectViewTree::SetCheckEventItem(HTREEITEM hItem)
 		}
 	}
 
+	ApplyLocalShapeChecks(hItem);
 	EndWaitCursor();
 }
 
@@ -353,6 +363,8 @@ void CMapObjectViewTree::UpdateCheckEventChildItem(HTREEITEM hItem, BOOL bCheck)
 // 체크 변경 시 상위 아이템 갱신
 void CMapObjectViewTree::UpdateCheckEventParentItem(HTREEITEM hItem)
 {
+	// Only aggregate groups. Leaf state comes from the layer definition.
+	if(!hItem || !ItemHasChildren(hItem)) return;
 	int nCheckCount = 0;
 	int nUnCheckCount = 0;
 	int nHalfCount = 0;
@@ -393,6 +405,13 @@ void CMapObjectViewTree::UpdateCheckEventParentItem(HTREEITEM hItem)
 
 				hSubItem = GetNextSiblingItem(hSubItem);
 			}
+		}
+
+		if(nCheckCount == 0 && nUnCheckCount == 0 && nHalfCount == 0)
+		{
+			SetItemState(hItem, (TREE_MEMBER_NOT << 12), TVIS_STATEIMAGEMASK);
+			UpdateCheckEventParentItem(GetParentItem(hItem));
+			return;
 		}
 
 		if(0 < nUnCheckCount)
@@ -447,6 +466,7 @@ void CMapObjectViewTree::SetDisableCheck(HTREEITEM hItem, BOOL bDisable)
 {
 	while(hItem)
 	{
+        if(hItem==m_baseRoot||hItem==m_localShapeRoot||std::find(m_sourceRoots.begin(),m_sourceRoots.end(),hItem)!=m_sourceRoots.end()){hItem=GetNextSiblingItem(hItem);continue;}
 		HTREEITEM hSubItem = GetChildItem(hItem);
 
 		if(hSubItem)
@@ -946,4 +966,66 @@ void CMapObjectViewTree::OnMapViewAutoOff()
 void CMapObjectViewTree::OnUpdateMapViewAutoOff(CCmdUI *pCmdUI)
 {
 	pCmdUI->SetCheck(!m_bAutoScale);
+}
+
+void CMapObjectViewTree::RefreshLocalShapeTree(){
+    if(!GetSafeHwnd())return;
+    RefreshSourceTree();
+    if(m_localShapeRoot)DeleteItem(m_localShapeRoot);
+    m_localShapeRoot=nullptr;m_localShapeItems.clear();
+    auto frame=DYNAMIC_DOWNCAST(CMainFrame,AfxGetMainWnd());if(!frame)return;
+    if(m_baseRoot)DeleteItem(m_baseRoot);m_baseRoot=nullptr;m_baseItems.clear();
+#if C4MAP_ENABLE_LOCAL || C4MAP_ENABLE_TERRAIN_LOCAL || C4MAP_ENABLE_TERRAIN_SERVER
+    if(!m_hRootItem)InsertMapObjectTitle();
+    m_baseRoot=InsertItem(_T("기본지도"),0,0,m_hRootItem);
+    const LPCTSTR titles[]={_T("소축척 지도"),_T("세계지도"),_T("Natural Earth 배경영상"),_T("지명"),_T("고도 데이터 (DTED/SRTM)"),_T("Terrain 파일 (로컬)"),_T("Terrain 서버 (Cesium)")};
+    for(int i=0;i<7;++i){if((i<5&&!C4MAP_ENABLE_LOCAL)||(i==5&&!C4MAP_ENABLE_TERRAIN_LOCAL)||(i==6&&!C4MAP_ENABLE_TERRAIN_SERVER))continue;auto item=InsertItem(titles[i],0,0,m_baseRoot);m_baseItems[item]=i;SetCheck(item,BaseMapVisible(i));}
+    UpdateCheckEventParentItem(m_baseRoot);Expand(m_baseRoot,TVE_EXPAND);Expand(m_hRootItem,TVE_EXPAND);
+#endif
+#if C4MAP_TILE_TREE_ONLY || !C4MAP_ENABLE_LOCAL || C4MAP_SHAPE_MODE == 2
+    return;
+#endif
+    auto layers=frame->m_indexMap.LocalDisplayLayers();if(layers.empty())return;
+    if(!m_hRootItem)InsertMapObjectTitle();
+    m_localShapeRoot=InsertItem(frame->m_indexMap.HasLocalCatalog()?_T("지도 (자동 축척)"):_T("로컬 SHP"),0,0,m_hRootItem);
+    std::map<CString,HTREEITEM> groups;
+    auto group=[&](const CString& key,const CString& label,HTREEITEM parent){auto it=groups.find(key);if(it!=groups.end())return it->second;auto item=InsertItem(label,0,0,parent);groups[key]=item;return item;};
+    for(const auto& layer:layers){HTREEITEM parent=m_localShapeRoot;CString key;
+        if(!layer.family.IsEmpty()){key=layer.family;parent=group(key,layer.family,parent);key+=_T("|")+layer.scale;parent=group(key,layer.scale,parent);}
+        key+=_T("|")+layer.category;parent=group(key,layer.category,parent);
+        auto item=InsertItem(layer.name,0,0,parent);m_localShapeItems[item]=layer.id;
+        if(layer.available)SetCheck(item,layer.checked);else {SetItemState(item,(TREE_MEMBER_NOT << 12),TVIS_STATEIMAGEMASK);}
+    }
+    // Children before parents, preserving partial check state.
+    for(auto it=groups.rbegin();it!=groups.rend();++it)UpdateCheckEventParentItem(it->second);
+    for(const auto& entry:groups)if(GetParentItem(entry.second)==m_localShapeRoot)Expand(entry.second,TVE_EXPAND);
+    Expand(m_localShapeRoot,TVE_EXPAND);Expand(m_hRootItem,TVE_EXPAND);
+
+}
+void CMapObjectViewTree::ApplyLocalShapeChecks(HTREEITEM changed){
+    auto frame=DYNAMIC_DOWNCAST(CMainFrame,AfxGetMainWnd());if(!frame||!changed)return;bool touched=false;int dirty=3;
+    for(const auto& entry:m_baseItems){auto parent=entry.first;while(parent&&parent!=changed)parent=GetParentItem(parent);if(parent){dirty=(std::min)(dirty,entry.second>=4?0:entry.second==2?1:3);SetBaseMapVisible(entry.second,(GetItemState(entry.first,TVIS_STATEIMAGEMASK)>>12)==TREE_MEMBER_ALLCHECK);touched=true;}}
+    for(const auto& entry:m_localShapeItems){HTREEITEM parent=entry.first;while(parent&&parent!=changed)parent=GetParentItem(parent);
+        if(parent){const UINT state=GetItemState(entry.first,TVIS_STATEIMAGEMASK)>>12;
+            if(state!=TREE_MEMBER_NOT){frame->m_indexMap.SetLocalDisplayVisible(entry.second,state==TREE_MEMBER_ALLCHECK);touched=true;}}}
+    for(const auto& entry:m_sourceItems){auto parent=entry.first;while(parent&&parent!=changed)parent=GetParentItem(parent);if(parent){dirty=(std::min)(dirty,2);MapSources().SetVisible(entry.second,(GetItemState(entry.first,TVIS_STATEIMAGEMASK)>>12)==TREE_MEMBER_ALLCHECK);touched=true;}}
+    if(touched){auto view=DYNAMIC_DOWNCAST(CC4IMapView,frame->GetActiveView());if(view){view->m_mapFrameCache.InvalidateFrom(dirty);view->DrawSituation(FALSE,TRUE,TRUE,TRUE);}}
+}
+
+void CMapObjectViewTree::RefreshSourceTree(){
+    for(auto root:m_sourceRoots)DeleteItem(root);m_sourceRoots.clear();m_sourceItems.clear();
+    if(!m_hRootItem)InsertMapObjectTitle();std::map<CString,HTREEITEM> groups;
+    auto group=[&](const CString& key,const CString& title,HTREEITEM parent){auto it=groups.find(key);if(it!=groups.end())return it->second;auto item=InsertItem(title,0,0,parent);groups[key]=item;SetCheck(item,FALSE);if(parent==m_hRootItem)m_sourceRoots.push_back(item);return item;};
+    auto layers=MapSources().Layers();
+    auto text=[](const std::string& s){int n=MultiByteToWideChar(CP_UTF8,0,s.c_str(),-1,nullptr,0);CStringW w;MultiByteToWideChar(CP_UTF8,0,s.c_str(),-1,w.GetBuffer(n),n);w.ReleaseBuffer();return CString(CW2T(w, CP_ACP));};
+    for(size_t i=0;i<layers.size();++i){const auto& layer=layers[i];if(!CMapSources::Enabled(layer))continue;
+        if(C4MAP_TILE_TREE_ONLY && layer.type!="VectorTile" && layer.tileScheme!="XYZ" && layer.type!="WMTS")continue;
+        CString type=text(layer.type);CString label=layer.type=="VectorTile"?_T("벡터 타일"):layer.type=="Raster"?(layer.tileScheme=="XYZ"?_T("래스터 타일"):_T("래스터")):type;
+        auto root=group(type,label,m_hRootItem);auto parent=root;CString key=type;
+        if(!layer.family.empty()){key+=_T("|")+text(layer.family);parent=group(key,text(layer.family),parent);}
+        if(layer.scale>0){CString scale;scale.Format(_T("1:%.0f"),layer.scale);key+=_T("|")+scale;parent=group(key,scale,parent);}
+        if(!layer.category.empty()){key+=_T("|")+text(layer.category);parent=group(key,text(layer.category),parent);}
+        auto item=InsertItem(text(layer.name),0,0,parent);m_sourceItems[item]=i;SetCheck(item,layer.visual);UpdateCheckEventParentItem(parent);
+    }
+    for(auto root:m_sourceRoots)Expand(root,TVE_EXPAND);Expand(m_hRootItem,TVE_EXPAND);
 }
