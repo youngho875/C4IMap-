@@ -1,6 +1,23 @@
 #pragma once
 
+// Shared UI headers may leave pack(1) active. Keep this C++ ABI identical
+// in ShapeT.cpp and all callers, then restore the caller's packing.
+#pragma pack(push, 8)
+
 #include <map>
+#include <memory>
+#include <vector>
+struct BaseMapState;
+struct LocalShapeState;
+struct LocalScaleCatalog;
+struct LocalDisplayLayer 
+{
+	size_t id; 
+	CString category,name; 
+	bool checked; 
+	CString family,scale; 
+	bool available=true; 
+};
 #include <string>
 #include "pointStruct.h"
 
@@ -71,10 +88,35 @@ public:
 
 	//void height(double lat, double lon);
 
+public:
+    bool LoadLocal(const CString& folder,const CString& xml,const CString& gss,int fallbackEpsg,CString& message);
+    void ConfigureLocal(CWnd* parent);
+    bool LoadLocalCatalog(const CString& root,CString& message);
+    bool HasLocalCatalog() const;
+    static void ResolveLocalStyles(const CString& folder,CString& xml,CString& gss);
+    std::vector<LocalDisplayLayer> LocalDisplayLayers() const;
+    void SetLocalDisplayVisible(size_t id,bool visible);
+    void BeginLocalFrame();
+    void DrawLocal(CDC* dc,float cx,float cy,float scale);
+    bool IdentifyLocal(CPoint point,CString& title,std::vector<CString>& fields,std::vector<CString>& values);
+    bool LocalVisible() const;
+    void ToggleLocal();
+    void LocalSettings(CString& folder,CString& xml,CString& gss,int& epsg) const;
+    std::vector<std::pair<CString,bool>> LocalLayerList() const;
+    void SetLocalLayerVisible(size_t index,bool visible);
+    CString LocalReport() const;
 private:
-	unsigned width, height;
+    std::unique_ptr<BaseMapState> m_baseMap;
+    void DrawBaseDetails(CDC* dc,float cx,float cy,float scale);
+    std::unique_ptr<LocalShapeState> m_local;
+    std::unique_ptr<LocalScaleCatalog> m_catalog;
+    unsigned width, height;
 	double originX, originY, pixelSizeX, pixelSizeY;
 	std::vector<float> data;
 
 };
 
+
+static_assert(sizeof(LocalDisplayLayer) == (sizeof(void*) == 8 ? 56 : 28), "LocalDisplayLayer ABI mismatch");
+static_assert(alignof(CShapeT) >= alignof(void*), "CShapeT ABI mismatch");
+#pragma pack(pop)
