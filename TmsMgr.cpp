@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "TmsMgr.h"
+#include "BaseMapOptions.h"
 #include "GeoDC/Coord.h"
 #include "GeoDC/CoordMgr.h"
 #include <algorithm>
@@ -56,7 +57,8 @@ void CTmsMgr::Initalize()
     mCoordMgr = GP_COORDMGR;
     mCoord.initialize_adaptation_data();
     mAvailableLevels.clear();
-    const LPCTSTR directories[] = { _T("D:/mapdata/maptile"), _T("D:/webcop/NaturalEarthII") };
+    CString configured=BaseMapPath("NaturalEarth.Path","D:/webcop/NaturalEarthII");
+    const LPCTSTR directories[] = { configured.GetString() };
     for (LPCTSTR directory : directories)
     {
         CFileFind finder;

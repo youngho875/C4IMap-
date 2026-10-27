@@ -3,7 +3,7 @@
 #include <map>
 #include <set>
 #include <atlimage.h>
-#include "DIBSectionLite.h"
+//#include "DIBSectionLite.h"
 //#include "../../INC/rtree.h"
 //#include "../../inc/graphic/bmglib/BMGGeoTIFF.h"
 
